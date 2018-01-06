@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="pw.rabit.xdebuggable">
+    package="pw.rabit.xposed.xdebuggable">
 
     <application
         android:allowBackup="true"
@@ -16,7 +16,7 @@
             android:value="Make your ROM behave like userdebug" />
         <meta-data
             android:name="xposedminversion"
-            android:value="82" />
+            android:value="36" />
     </application>
 
 </manifest>
