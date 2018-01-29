@@ -18,22 +18,42 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class DebugHook implements IXposedHookLoadPackage {
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
+        XC_MethodHook myHook = new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                Activity app = (Activity) param.thisObject;
+                Intent intent = app.getIntent();
+                intent.putExtra("com.android.settings.extra.DEBUGGABLE", false);
+                app.setIntent(intent);
+            }
+        };
         if (loadPackageParam.packageName.equals("com.android.settings")) {
-            XposedHelpers.findAndHookMethod(
-                    "com.android.settings.AppPicker",
-                    loadPackageParam.classLoader,
-                    "onCreate",
-                    "android.os.Bundle",
-                    new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                            Activity app = (Activity) param.thisObject;
-                            Intent intent = app.getIntent();
-                            intent.putExtra("com.android.settings.extra.DEBUGGABLE", false);
-                            app.setIntent(intent);
-                        }
-                    }
-            );
+            String className = "";
+            try{
+                XposedHelpers.findClass("com.android.settings.AppPicker", loadPackageParam.classLoader);
+                className = "com.android.settings.AppPicker";
+                XposedBridge.log("XDebuggable: Class com.android.settings.AppPicker FOUND!");
+            } catch(XposedHelpers.ClassNotFoundError e) {
+                XposedBridge.log("XDebuggable: Class com.android.settings.AppPicker not found.");
+            }
+            try{
+                XposedHelpers.findClass("com.android.settings.development.AppPicker", loadPackageParam.classLoader);
+                className = "com.android.settings.development.AppPicker";
+                XposedBridge.log("XDebuggable: Class com.android.settings.development.AppPicker FOUND!");
+            } catch(XposedHelpers.ClassNotFoundError e) {
+                XposedBridge.log("XDebuggable: Class com.android.settings.development.AppPicker not found.");
+            }
+
+            if(!className.equals("")){
+                XposedHelpers.findAndHookMethod(
+                        className,
+                        loadPackageParam.classLoader,
+                        "onCreate",
+                        "android.os.Bundle",
+                        myHook
+                );
+            }
+
         } else if (loadPackageParam.packageName.equals("android")) {
             // Inspired from https://github.com/jecelyin/buildprop/blob/master/app/src/main/java/com/jecelyin/buildprop/BuildPropEditor.java
             XposedBridge.hookAllMethods(android.os.Process.class, "start", new XC_MethodHook() {
